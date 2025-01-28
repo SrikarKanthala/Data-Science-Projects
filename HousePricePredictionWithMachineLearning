@@ -1,0 +1,76 @@
+# Import libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
+# Load the dataset
+file_path = "kc_house_data.csv"  # Ensure the file path is correct
+data = pd.read_csv(file_path)
+
+# Display dataset information
+print("Dataset Preview:")
+print(data.head())
+print("\nDataset Summary:\n", data.describe())
+
+# Feature selection (use relevant columns)
+features = ['sqft_living', 'bedrooms', 'bathrooms', 'floors', 'condition', 'grade', 'yr_built']
+target = 'price'
+
+X = data[features]
+y = data[target]
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the Random Forest Regressor
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+
+print(f"Mean Absolute Error: ${mae:,.2f}")
+print(f"Mean Squared Error: ${mse:,.2f}")
+print(f"Root Mean Squared Error: ${rmse:,.2f}")
+print(f"R-squared: {r2:.2f}")
+
+# Feature importance
+importances = model.feature_importances_
+feature_importance = pd.DataFrame({
+    'Feature': features,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+print("\nFeature Importance:")
+print(feature_importance)
+
+# Create a DataFrame to compare predictions with actual prices
+predicted_vs_actual = pd.DataFrame({
+    'Actual Price': y_test.values,
+    'Predicted Price': y_pred,
+})
+
+# Add a preview of the test set features
+test_features = X_test.reset_index(drop=True)
+comparison = pd.concat([predicted_vs_actual, test_features], axis=1)
+
+print("\nComparison of Actual vs Predicted Prices:\n")
+print(comparison.head())
+
+# Visualize actual vs predicted prices
+plt.figure(figsize=(8, 8))
+plt.scatter(y_test, y_pred, alpha=0.6, edgecolor='k')
+plt.xlabel('Actual Prices')
+plt.ylabel('Predicted Prices')
+plt.title('Actual vs Predicted Prices')
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], 'r--')
+plt.show()
